@@ -223,3 +223,6 @@ __pycache__/
 Thumbs.db
 
 stop_times.txt
+
+#Environnement
+.env
