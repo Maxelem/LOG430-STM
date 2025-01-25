@@ -77,10 +77,28 @@ services:
     labels:
       ARTIFACT_CATEGORY: Computation
 
+  db:
+    container_name: postgresdb
+    image: postgres
+    restart: always
+    environment:
+      ID: postgresdb
+      POSTGRES_USER: '${USER}'
+      POSTGRES_PASSWORD: '${PASSWORD}'
+      POSTGRES_DB: '${DATABASE}'
+    ports:
+      - '5432:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
+    labels:
+      ARTIFACT_CATEGORY: Database
+
   stm:
     container_name: STM
     image: stm
     restart: always
+    depends_on:
+      - db
     build:
       context: ../STM
       dockerfile: /Configuration/Dockerfile
@@ -91,7 +109,17 @@ services:
       API_KEY: '${STM}'
       # HIGH (3gb) > MEDIUM (1.5gb) > LOW (300mb)
       MEMORY_CONSUMPTION: LOW
+      DB_SERVER_ADDRESS: '${SERVER}'
+      DB_PORT: '${PORT}'
+      DB_NAME: '${DATABASE}'
+      DB_USER: '${USER}'
+      DB_PASSWORD: '${PASSWORD}'
+
     ports:
       - '32774:8080'
     labels:
       ARTIFACT_CATEGORY: Computation
+
+volumes:
+  db:
+    driver: local
