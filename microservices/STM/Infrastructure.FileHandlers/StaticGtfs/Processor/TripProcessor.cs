@@ -83,7 +83,7 @@ public sealed class TripProcessor : IDisposable
             }
 
             await _stopTimesStreamCsv!.ReadAsync().ConfigureAwait(false);
-            
+
             while (await _stopTimesStreamCsv.ReadAsync().ConfigureAwait(false))
             {
                 var id = _stopTimesStreamCsv.GetField<string>(0);
@@ -98,7 +98,7 @@ public sealed class TripProcessor : IDisposable
 
                     var stopScheduleWrapper = new StopScheduleWrapper(stopId, departureTime, stopSequence);
 
-                    if(stopScheduleWrapper is null) throw new NullReferenceException("StopScheduleWrapper was null");
+                    if (stopScheduleWrapper is null) throw new NullReferenceException("StopScheduleWrapper was null");
 
                     tripWrapper.ScheduledStops.Add(stopScheduleWrapper);
                 }

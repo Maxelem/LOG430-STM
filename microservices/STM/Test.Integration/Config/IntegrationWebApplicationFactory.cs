@@ -14,7 +14,7 @@ public class IntegrationWebApplicationFactory : WebApplicationFactory<Program>, 
 {
     private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
         .WithImage("postgres:latest")
-        .WithPortBinding(32573,5432)
+        .WithPortBinding(32573, 5432)
         .WithDatabase("stm")
         .WithUsername("postgres")
         .WithPassword("postgres")

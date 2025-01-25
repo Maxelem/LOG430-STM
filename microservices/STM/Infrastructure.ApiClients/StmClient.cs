@@ -19,6 +19,7 @@ public class StmClient : IStmClient
 
     //is a disposable reference
     private static Timer? _timer;
+
     private readonly IBackOffRetryPolicy<StmClient> _backOffRetryPolicy;
     private readonly IHostInfo _hostInfo;
     private readonly ILogger<StmClient> _logger;
@@ -66,7 +67,6 @@ public class StmClient : IStmClient
 
                 throw;
             }
-            
         });
     }
 
@@ -119,11 +119,11 @@ public class StmClient : IStmClient
                 """
                         Error while parsing STM feed
                         This is sometimes due to a wrong API key
-                        Validate your key by testing it on 
+                        Validate your key by testing it on
                         https://portail.developpeurs.stm.info/apihub/?_gl=1*nsvvxk*_ga*MTA1MTIyMTQ0Mi4xNjc2MDU0OTc3*_ga_37MDMXFX83*MTY5MzkxNzMzNC4yMS4xLjE2OTM5MTc0MjYuNDAuMC4w#/apis/bc64b63f-4ef4-4055-bd2f-eb3bf30ddd16/show/spec
                         """);
         }
-       
+
         return Enumerable.Empty<VehiclePosition>();
     }
 
@@ -131,7 +131,7 @@ public class StmClient : IStmClient
     {
         if (response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.TooManyRequests)
         {
-            _logger.LogError(response.ErrorMessage);
+            _logger.LogError($"{response.ErrorMessage} - StatusCode: {response.StatusCode}");
 
             throw new Exception(response.ErrorMessage);
         }

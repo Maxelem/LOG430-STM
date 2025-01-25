@@ -1,4 +1,3 @@
-using System.Reflection;
 using Application.Commands.LoadStaticGtfs;
 using Application.Commands.Seedwork;
 using Application.Commands.UpdateBus;
@@ -35,12 +34,13 @@ using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.OpenApi.Models;
+using System.Reflection;
 
 namespace Configuration;
 
 public class Program
 {
-    public static readonly bool UseInMemoryDatabase = true;
+    public static readonly bool UseInMemoryDatabase = false;
 
     private static readonly InMemoryDatabaseRoot DatabaseRoot = new();
 
@@ -54,11 +54,12 @@ public class Program
 
     // this is a quick start configuration
     // set values using environment variables instead
-    private const string DbServerAddress = "";
-    private const int DbPort = 00000;
-    private const string DbUsername = "";
-    private const string DbPassword = "";
-    private const string DatabaseName = "";
+    private static string? DbServerAddress => Environment.GetEnvironmentVariable("DB_SERVER_ADDRESS");
+
+    private static int? DbPort => int.Parse(Environment.GetEnvironmentVariable("DB_PORT") ?? "5432");
+    private static string? DbUsername => Environment.GetEnvironmentVariable("DB_USER");
+    private static string? DbPassword => Environment.GetEnvironmentVariable("DB_PASSWORD");
+    private static string? DatabaseName => Environment.GetEnvironmentVariable("DB_NAME");
 
     public static void Main(string[] args)
     {
@@ -70,13 +71,13 @@ public class Program
 
         RepositoryDbContextOptionConfiguration = UseInMemoryDatabase
             ? (options) => { options.UseInMemoryDatabase("InMemory", DatabaseRoot); }
-            : (options) =>
-            {
-                options.EnableDetailedErrors();
-                options.EnableSensitiveDataLogging();
-                options.EnableThreadSafetyChecks();
-                options.UseNpgsql($"Server={DbServerAddress};Port={DbPort};Username={DbUsername};Password={DbPassword};Database={DatabaseName};");
-            };
+        : (options) =>
+        {
+            options.EnableDetailedErrors();
+            options.EnableSensitiveDataLogging();
+            options.EnableThreadSafetyChecks();
+            options.UseNpgsql($"Server={DbServerAddress};Port={DbPort};Username={DbUsername};Password={DbPassword};Database={DatabaseName};");
+        };
 
         builder.Services.AddLogging(loggingBuilder =>
         {
