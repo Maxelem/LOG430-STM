@@ -1,9 +1,8 @@
-using System.ComponentModel.DataAnnotations;
-using System.Threading.RateLimiting;
 using Application.Interfaces;
 using Application.Usecases;
 using Microsoft.AspNetCore.RateLimiting;
 using RouteTimeProvider.RestClients;
+using System.Threading.RateLimiting;
 
 namespace RouteTimeProvider
 {
