@@ -59,6 +59,7 @@ services:
       - '32772:8080'
     labels:
       ARTIFACT_CATEGORY: Computation
+      Replicas: RouteTimeProvider, RouteTimeProvider2, RouteTimeProvider3
 
   tripcomparator:
     container_name: TripComparator
@@ -72,6 +73,7 @@ services:
       NODE_CONTROLLER_PORT: '${NODE_CONTROLLER_PORT}'
       ID: TripComparator
       MQ_SERVICE_NAME: EventStream
+      RTP_SERVICE_NAME: RouteTimeProvider
     ports:
       - '32773:8080'
     labels:
