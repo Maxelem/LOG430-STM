@@ -40,6 +40,8 @@ public class TripComparatorMqController : IConsumer<CoordinateMessage>
 
         _ = _backOffRetryPolicy.ExecuteAsync(async () => await _compareTimes.WriteToStream(producer.Reader));
 
+        _ = _infiniteRetryPolicy.ExecuteAsync(_compareTimes.BeginHealthCheck);
+
         string RemoveWhiteSpaces(string s) => s.Replace(" ", "");
     }
 }

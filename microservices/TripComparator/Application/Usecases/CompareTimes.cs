@@ -2,6 +2,7 @@
 using Application.BusinessObjects;
 using Application.DTO;
 using Application.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Usecases
 {
@@ -16,15 +17,34 @@ namespace Application.Usecases
         //This is a very aggressive polling rate, is there a better way to do this?
         private readonly PeriodicTimer _periodicTimer = new(TimeSpan.FromMilliseconds(50));
 
+        private readonly PeriodicTimer _healthCheckPeriodicTimer = new(TimeSpan.FromMilliseconds(50));
+
         private int _averageCarTravelTime;
 
         private RideDto? _optimalBus;
 
-        public CompareTimes(IRouteTimeProvider routeTimeProvider, IBusInfoProvider iBusInfoProvider, IDataStreamWriteModel dataStreamWriteModel)
+        private readonly ILogger<CompareTimes> _logger;
+
+        public CompareTimes(IRouteTimeProvider routeTimeProvider, IBusInfoProvider iBusInfoProvider, IDataStreamWriteModel dataStreamWriteModel, ILogger<CompareTimes> logger)
         {
             _routeTimeProvider = routeTimeProvider;
             _iBusInfoProvider = iBusInfoProvider;
             _dataStreamWriteModel = dataStreamWriteModel;
+            _logger = logger;
+        }
+
+        public async Task BeginHealthCheck()
+        {
+            var isServiceAlive = true;
+            while (await _healthCheckPeriodicTimer.WaitForNextTickAsync())
+            {
+                isServiceAlive = await _routeTimeProvider.IsServiceAlive();
+
+                if (!isServiceAlive)
+                {
+                    _logger.LogInformation($"RouteTimeProvider service is dead.");
+                }
+            }
         }
 
         public async Task<Channel<IBusPositionUpdated>> BeginComparingBusAndCarTime(string startingCoordinates, string destinationCoordinates)
@@ -55,7 +75,10 @@ namespace Application.Usecases
         //Is polling ideal?
         public async Task PollTrackingUpdate(ChannelWriter<IBusPositionUpdated> channel)
         {
-            if (_optimalBus is null) throw new Exception("bus data was null");
+            if (_optimalBus is null)
+            {
+                throw new Exception("bus data was null");
+            }
 
             var trackingOnGoing = true;
 
@@ -63,11 +86,14 @@ namespace Application.Usecases
             {
                 var trackingResult = await _iBusInfoProvider.GetTrackingUpdate();
 
-                if (trackingResult is null) continue;
+                if (trackingResult is null)
+                {
+                    continue;
+                }
 
                 trackingOnGoing = !trackingResult.TrackingCompleted;
 
-                var busPosition = new BusPosition()
+                var busPosition = new BusPosition
                 {
                     Message = trackingResult.Message + $"\nCar: {_averageCarTravelTime} seconds",
                     Seconds = trackingResult.Duration,

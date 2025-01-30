@@ -78,7 +78,7 @@ namespace Configuration
         private static void ConfigureMassTransit(IServiceCollection services)
         {
             var hostInfo = new HostInfo();
-            
+
             var routingData = RestController.GetAddress(hostInfo.GetMQServiceName(), LoadBalancingMode.RoundRobin).Result.First();
 
             var uniqueQueueName = $"time_comparison.node_controller-to-any.query.{Guid.NewGuid()}";
@@ -89,7 +89,7 @@ namespace Configuration
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host($"rabbitmq://{ routingData.Host }:{routingData.Port}", c =>
+                    cfg.Host($"rabbitmq://{routingData.Host}:{routingData.Port}", c =>
                     {
                         c.RequestedConnectionTimeout(100);
                         c.Heartbeat(TimeSpan.FromMilliseconds(50));

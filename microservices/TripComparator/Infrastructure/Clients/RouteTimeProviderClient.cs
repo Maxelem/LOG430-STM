@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Application.Interfaces.Policies;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using ServiceMeshHelper;
 using ServiceMeshHelper.BusinessObjects;
@@ -10,13 +11,17 @@ namespace Infrastructure.Clients;
 
 public class RouteTimeProviderClient : IRouteTimeProvider
 {
-    private readonly IInfiniteRetryPolicy<RouteTimeProviderClient> _infiniteRetry;
+    private const string AliveMessage = "isAlive";
 
-    public RouteTimeProviderClient(IInfiniteRetryPolicy<RouteTimeProviderClient> infiniteRetry)
+    private readonly IInfiniteRetryPolicy<RouteTimeProviderClient> _infiniteRetry;
+    private readonly ILogger _logger;
+
+    public RouteTimeProviderClient(IInfiniteRetryPolicy<RouteTimeProviderClient> infiniteRetry, ILogger<RouteTimeProviderClient> logger)
     {
         _infiniteRetry = infiniteRetry;
+        _logger = logger;
     }
-    
+
     public Task<int> GetTravelTimeInSeconds(string startingCoordinates, string destinationCoordinates)
     {
         return _infiniteRetry.ExecuteAsync(async () =>
@@ -51,14 +56,50 @@ public class RouteTimeProviderClient : IRouteTimeProvider
             return (int)times.Average();
         });
     }
+
+    public Task<bool> IsServiceAlive()
+    {
+        return _infiniteRetry.ExecuteAsync(async () =>
+        {
+            var res = await RestController.Get(new GetRoutingRequest
+            {
+                TargetService = "RouteTimeProvider",
+                Endpoint = "ServiceHealth/Get",
+                Mode = LoadBalancingMode.Broadcast
+            });
+
+            var isAlive = false;
+            await foreach (var result in res.ReadAllAsync())
+            {
+                if (result.Content is not null)
+                {
+                    isAlive |= JsonConvert.DeserializeObject<string>(result.Content) == AliveMessage;
+                }
+            }
+
+            // hello?
+            if (!isAlive)
+            {
+                var tests = await RestController.GetAddress(Environment.GetEnvironmentVariable("RTP_SERVICE_NAME"),
+                    LoadBalancingMode.Broadcast);
+
+                foreach (var test in tests)
+                {
+                    _logger.LogInformation($"Address:{test.Address} Host:{test.Host} Port:{test.Port}");
+                }
+            }
+
+            return isAlive;
+        });
+    }
 }
 
-//Exemple of how to use Restsharp for a simple request to a service (without the pros (and cons) of using the NodeController)
+//Example of how to use Restsharp for a simple request to a service (without the pros (and cons) of using the NodeController)
 
 //var restClient = new RestClient("http://RouteTimeProvider");
 //var restRequest = new RestRequest("RouteTime/Get");
 
 //restRequest.AddQueryParameter("startingCoordinates", startingCoordinates);
 //restRequest.AddQueryParameter("destinationCoordinates", destinationCoordinates);
-            
+
 //return (await restClient.ExecuteGetAsync<int>(restRequest)).Data;
