@@ -35,10 +35,9 @@ namespace Application.Usecases
 
         public async Task BeginHealthCheck()
         {
-            var isServiceAlive = true;
             while (await _healthCheckPeriodicTimer.WaitForNextTickAsync())
             {
-                isServiceAlive = await _routeTimeProvider.IsServiceAlive();
+                var isServiceAlive = await _routeTimeProvider.IsServiceAlive();
 
                 if (!isServiceAlive)
                 {
